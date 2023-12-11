@@ -1,0 +1,601 @@
+SET SERVEROUTPUT ON
+
+DECLARE
+    v_eid NUMBER;
+    v_ename employees.first_name%TYPE; -- 에러메세지 : identifier 'V_ENAME' must be declared 뜰 경우 declare 절과 into 절의 변수명이 잘못된 경우 자주 발생.
+    v_job VARCHAR2(1000);
+BEGIN
+
+    SELECT employee_id, first_name, job_id
+    INTO v_eid, v_ename, v_job
+    FROM employees
+    WHERE employee_id = 100;
+    -- INTO절 추가 후 필요한 조건이 있으면 WHERE 추가 가능 및 HAVING 절 등등 다 사용이 가능함. 순서에 따라서 변수값이 들어가기때문에 항상 순서가 중요함!!
+    
+    DBMS_OUTPUT.PUT_LINE('사원번호 : ' ||  v_eid);
+    DBMS_OUTPUT.PUT_LINE('사원이름 : ' ||  v_ename);
+    DBMS_OUTPUT.PUT_LINE('업무 : ' ||  v_job);
+    
+END;
+/
+
+
+-- 치환변수 : & (decalre 절과 begin 절 둘다 사용할 수 있음.)
+-- 문자를 사용해야할 경우에는 문자 타입을 명시해주거나 '&사원번호'로 만들어줘야한다.
+DECLARE
+    v_eid employees.employee_id%type := &사원번호;
+    v_ename employees.last_name%type;
+BEGIN
+    SELECT first_name || ',' || last_name
+    INTO v_ename
+    FROM employees
+    WHERE employee_id = v_eid;
+    
+    DBMS_OUTPUT.PUT_LINE('사원번호 : ' ||  v_eid);
+    DBMS_OUTPUT.PUT_LINE('사원이름 : ' ||  v_ename);
+    
+    
+END;
+/
+
+-- 1) 특정 사원의 매니저에 해당하는 사원번호를 출력 (특정 사원은 치환변수를 이용하여 입력)
+-- 입력한 101번의 manager_id 는 100번
+DECLARE
+
+    v_emid employees.manager_id%type;
+    
+BEGIN
+    SELECT manager_id
+    INTO v_emid
+    FROM employees
+    WHERE employee_id = &사원번호;
+
+    DBMS_OUTPUT.PUT_LINE('매니저 : ' ||  v_emid);
+    
+END;
+/
+
+-- INSERT, UPDATE (암시적 커서 예제)
+-- email 은 반드시 unique 제약조건이 있어야한다
+
+DECLARE
+    v_deptno departments.department_id%type;
+    v_comm employees.commission_pct%type := 0.1;
+BEGIN
+    SELECT department_id
+    INTO v_deptno
+    FROM employees
+    WHERE employee_id = &사원번호;
+    
+    INSERT INTO employees(employee_id, last_name, email, hire_date, job_id, department_id)
+    values (1001, 'Hong', 'hkd1@google.com', sysdate, 'IT_PROG', v_deptno);
+    
+    DBMS_OUTPUT.PUT_LINE('등록결과 : ' || SQL%ROWCOUNT);
+    
+    UPDATE employees
+    SET salary = (NVL(salary,0) + 10000) * v_comm
+    WHERE employee_id = 1001;
+    
+    DBMS_OUTPUT.PUT_LINE('수정결과 : ' || SQL%ROWCOUNT);
+    
+END;
+/
+
+ROLLBACK;
+
+select * from employees where employee_id = 1001;
+
+
+BEGIN
+    DELETE FROM employees
+    WHERE employee_id = &사원번호;
+    
+    IF SQL%ROWCOUNT = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('해당 사원은 존재하지 않습니다.');
+    END IF;
+    
+END;
+/
+
+
+/* 
+    1. 사원번호를 입력할 경우
+    사원번호, 사원이름, 부서이름을 출력하는 PL/SQL을 작성하시오.
+    사원번호는 치환변수를 통해 입력받습니다.
+
+--> 입력 : 사원번호 / 출력 : 사원번호, 사원이름, 부서이름
+*/
+-- JOIN 구문
+DECLARE
+    v_eid employees.employee_id%type;
+    v_ename employees.last_name%type;
+    v_dname departments.department_name%type;
+    
+BEGIN
+SELECT e.employee_id, e.last_name, d.department_name
+INTO v_eid, v_ename, v_dname
+FROM employees e join departments d on (e.department_id = d.department_id)
+WHERE employee_id = &사원번호;
+
+    DBMS_OUTPUT.PUT_LINE('사원번호 : ' || v_eid);
+    DBMS_OUTPUT.PUT_LINE('사원이름 : ' || v_ename);
+    DBMS_OUTPUT.PUT_LINE('부서이름 : ' || v_dname);
+    
+END;
+/
+
+
+--2개의 SELECT문
+DECLARE
+v_eid employees.employee_id%type;
+    v_ename employees.last_name%type;
+    v_deptname departments.department_name%type;
+    v_deptid departments.department_id%type;
+BEGIN
+select employee_id, last_name , department_id
+into v_eid, v_ename, v_deptname
+from employees
+where emloyee_id = &사원번호;
+
+select department_name
+into v_deptname
+from departments
+where department_id = v_deptname;
+
+END;
+/
+
+/* 
+    2. 사원번호를 입력할 경우 
+    사원이름, 급여, 연봉을 출력하는 PL/SQL 을 작성하시오.
+    사원번호는 치환변수를 사용하고 연봉은 아래의 공식을 기반으로 연산하시오.
+    (급여 * 12 + (NVL (급여, 0) * NVL (커미션, 0) * 12))
+
+*/
+
+--1번 방법
+DECLARE
+v_ename employees.last_name%type;
+v_sal employees.salary%type;
+v_annual v_sal%type;
+
+BEGIN    
+SELECT last_name, salary, (salary * 12 + (NVL(salary, 0) * NVL(commission_pct,0) * 12))
+into v_ename, v_annual, v_sal
+FROM  employees
+WHERE employee_id = &사원번호;
+
+
+DBMS_OUTPUT.PUT_LINE('사원이름 : ' || v_ename);
+    DBMS_OUTPUT.PUT_LINE('급여 : ' || v_sal);
+    DBMS_OUTPUT.PUT_LINE('연봉 : ' || v_annual);
+
+END;
+/
+
+
+-- 2번 방법
+
+DECLARE
+v_ename employees.last_name%type;
+v_sal employees.salary%type;
+v_annual v_sal%type;
+v_comm employees.commission_pct%type;
+
+BEGIN
+SELECT last_name, salary, commission_pct
+into v_ename, v_comm, v_sal
+FROM  employees
+WHERE employee_id = &사원번호;
+ v_annual := v_sal * 12 + NVL(salary, 0) * NVL(commission_pct,0) * 12;
+ 
+DBMS_OUTPUT.PUT_LINE('사원이름 : ' || v_ename);
+    DBMS_OUTPUT.PUT_LINE('급여 : ' || v_sal);
+    DBMS_OUTPUT.PUT_LINE('연봉 : ' || v_annual);
+
+END;
+/
+
+
+-- 기본 if문 
+
+BEGIN
+    DELETE FROM employees
+    WHERE employee_id = &사원번호;
+    
+    IF SQL%ROWCOUNT = 0 THEN
+    
+        DBMS_OUTPUT.PUT_LINE('정상적으로 실행되지 않았습니다.');
+        DBMS_OUTPUT.PUT_LINE('해당 사원은 존재하지 않습니다.');
+        
+    END IF;
+END;
+/
+
+
+-- if ~ else 문 : 팀장급
+
+DECLARE
+    v_count NUMBER;
+BEGIN
+     SELECT COUNT (employee_id)
+     INTO v_count
+     FROM employees
+     WHERE manager_id = &eid;
+     
+     IF v_count = 0 then
+        DBMS_OUTPUT.PUT_LINE('일반 사원입니다.');
+    ELSE  --else는 자기 자식 조건이 없다.
+        DBMS_OUTPUT.PUT_LINE('팀장입니다.');
+END IF;
+END;
+/
+
+
+-- IF ~ ELSIF ~ ELSE 문 : 연차
+
+DECLARE
+    v_hdate number;
+BEGIN
+    SELECT TRUNC(MONTHS_BETWEEN(sysdate, hire_date)/12)
+    INTO v_hdate
+    FROM employees
+    WHERE employee_id = &사원번호;
+    -- 조건을 세울때 더 큰 조건이 위에오면 작은 조건은 실행되지 않는다. 15년차 조건이 10년차보다 먼저 올 경우 10년차는 15년차 안에 포함되기때문에 실행되지 않음.
+
+    IF v_hdate < 5 THEN --입사한지 5년 미만
+        DBMS_OUTPUT.PUT_LINE('입사한지 5년 미만입니다.');
+    ELSIF v_hdate < 10 THEN -- 입사한지 5년 이상 10년 미만
+        DBMS_OUTPUT.PUT_LINE('입사한지 10년 미만입니다.');
+    ELSIF v_hdate < 15 THEN -- 입사한지 10년 이상 15년 미만
+        DBMS_OUTPUT.PUT_LINE('입사한지 15년 미만입니다.');
+    ELSIF v_hdate < 20 THEN -- 입사한지 15년 이상 20년 미만
+        DBMS_OUTPUT.PUT_LINE('입사한지 20년 미만입니다.');
+    ELSE 
+        DBMS_OUTPUT.PUT_LINE('입사한지 20년 이상입니다.');
+    END IF;
+END;
+/
+
+select employee_id, trunc(months_between(sysdate, hire_date)/12),
+trunc((sysdate-hire_date)/365)
+from employees
+order by 2 desc;
+
+/*
+3-1 사원번호를 입력(치환변수사용&) 할 경우
+입사일이 2005년 이후 ( 2005년 포함) 이면 'New employee' 출력
+ 2005년 이전이면 'Career emplpoyee' 출력
+ 
+ --rr yy : 오라클은 기준이 2000년대로 한다.
+ rr : 50~99 처럼 뒤에오는 숫자일 경우는 전세기로, 00~49까지는 현세기로 인식된다.
+ 
+ yy : 입력 년도를 오라클 서버의 현재 날짜와 동시대로 계산
+    ex. YY 형식에서 '19'를 입력한다면 2019년으로, '55'을 입력한다면 2055년으로, '81'을 입력한다면 2081년으로 인식
+ 
+-- 입력 : 사원번호
+-- 출력 : 입사일
+
+-- 조건문 (IF문) : 입사일 => 2005년 'New employee' 아니면 'Career emplpoyee' 
+*/
+
+-- 1) 날짜 그대로 비교
+DECLARE
+    v_hdate DATE;
+BEGIN
+    SELECT hire_date
+    INTO v_hdate
+    FROM employees
+    WHERE employee_id = &사원번호;
+    
+        IF v_hdate >= TO_DATE('2005-01-01', 'yyyy-MM-dd') THEN
+            DBMS_OUTPUT.PUT_LINE('New employee');
+        ELSE 
+            DBMS_OUTPUT.PUT_LINE('Career emplpoyee');
+        END IF;
+END;
+/
+
+-- 2) 년도만 비교
+DECLARE
+    v_year CHAR(4 CHAR);
+BEGIN
+    SELECT TO_CHAR(hire_date, 'yyyy')  -- TO_CHAR : 원하는 년도, 월, 일만 빼올 수 있음.
+    INTO v_year
+    FROM employees
+    WHERE employee_id = &사원번호;
+    
+        IF v_year >= '2005' THEN
+            DBMS_OUTPUT.PUT_LINE('New employee');
+        ELSE 
+            DBMS_OUTPUT.PUT_LINE('Career emplpoyee');
+        END IF;
+END;
+/
+
+
+/*
+3-2 사원번호를 입력(치환변수사용&) 할 경우
+입사일이 2005년 이후 ( 2005년 포함) 이면 'New employee' 출력
+ 2005년 이전이면 'Career emplpoyee' 출력
+ 단, DBMS_OUTPUT.PUT_LINE()은 코드 상 한번만 작성
+*/
+DECLARE
+    v_year CHAR(4 CHAR);
+    --v_msg VARCHAR2(1000);
+    v_msg VARCHAR2(1000) := 'Career emplpoyee';
+BEGIN
+    SELECT TO_CHAR(hire_date, 'yyyy')  -- TO_CHAR : 원하는 년도, 월, 일만 빼올 수 있음.
+    INTO v_year
+    FROM employees
+    WHERE employee_id = &사원번호;
+--        
+--       IF v_year >= '2005' THEN
+--            v_msg := 'New employee';
+--        ELSE
+--            v_msg := 'Career emplpoyee';
+--        END IF;
+--        DBMS_OUTPUT.PUT_LINE(v_msg);
+--END;
+--/
+
+
+IF v_year >= '2005' THEN
+v_msg := 'New employee';
+END IF;
+DBMS_OUTPUT.PUT_LINE(v_msg);
+END;
+/
+
+
+/*
+4. 급여가 5000 이하이면 20% 인상된 급여
+급여가 10000 이하이면 15% 인상된 급여
+급여가 15000 이하이면 10% 인상된 급여
+급여가 15001 이하이면 급여 인상없음
+
+사원번호를 입력(치환변수)하면 사원이름, 급여 , 인상된 급여가 출력되도록 PL/SQL 블록을 생성하시오.
+*/
+--
+--DECLARE
+--    v_ename employees.last_name%type;
+--    v_sal employees.salary%type;
+--    v_upsal NUMBER := 0;
+--
+--BEGIN
+--    SELECT last_name, salary
+--    INTO v_ename, v_sal
+--    FROM employees
+--    WHERE employee_id = &사원번호;
+--    
+--    IF v_sal <= 5000 THEN
+--    v_upsal := 20;
+--    ELSIF v_sal <= 10000 THEN
+--    v_upsal := 15;
+--    ELSIF v_sal <= 15000 THEN
+--    v_upsal := 10;
+--
+
+
+DECLARE
+    v_ename employees.last_name%TYPE;
+    v_sal employees.salary%TYPE;
+    v_upSal NUMBER := 0;
+BEGIN
+    SELECT last_name, salary
+    INTO v_ename, v_sal
+    FROM employees
+    WHERE employee_id = &사원번호;
+    
+    IF v_sal <= 5000 THEN
+        v_upSal := 20;
+    ELSIF v_sal <= 10000 THEN
+        v_upSal := 15;
+    ELSIF v_sal <= 15000 THEN
+        v_upSal := 10;
+    END IF;
+    
+    DBMS_OUTPUT.PUT_LINE('사원이름 : ' || v_ename);
+    DBMS_OUTPUT.PUT_LINE('급여 : ' || v_sal);
+    DBMS_OUTPUT.PUT_LINE('인상된 급여 : ' || (v_sal * (1 + v_upSal / 100)));
+    
+END;
+/
+
+-- 1에서 10까지 정수값을 더한 결과를 출력
+-- 기본 loop
+DECLARE
+    v_num NUMBER(2,0) := 1;  --1~10
+    v_sum NUMBER(2,0) := 0; -- 결과
+BEGIN
+    LOOP
+        v_sum := v_sum + v_num;
+        v_num := v_num + 1;  --exit when 이랑 변환되는 코드 순서 바로 붙여서 최대한 사용할 수 있도록 하기. 아니면 무한루프 혹은 값의 범위를 벗어났다고 에러가뜸.
+        EXIT WHEN v_num > 10;
+    END LOOP;
+    DBMS_OUTPUT.PUT_LINE(v_sum);
+END;
+/
+
+
+DECLARE
+    v_num NUMBER(2,0) := 1;  --1~10
+    v_sum NUMBER(2,0) := 0; -- 결과
+BEGIN
+    WHILE v_num <= 10  --WHILE 문을 사용하려면 EXIT WHEN 조건의 반대로 작성
+    LOOP
+        v_sum := v_sum + v_num;
+        v_num := v_num + 1;  --exit when 이랑 변환되는 코드 순서 바로 붙여서 최대한 사용할 수 있도록 하기. 아니면 무한루프 혹은 값의 범위를 벗어났다고 에러가뜸.
+        
+    END LOOP;
+    DBMS_OUTPUT.PUT_LINE(v_sum);
+END;
+/
+
+-- FOR LOOP문 주의사항
+-- 1) FOR LOOP의 임시변수 => DECLARE 절에 정의된 변수 이름과 같으면 안됨
+--2) FOR LOOP는 기본적으로 오름차순 정렬, 내림차순으로 값을 받아오고자 한다면 REVERSE 추가.
+-- REVERSE 를 사용하지 않을 경우 직접적으로 범위를 10..1 로 줘도 LOOP가 돌지않고 99로 끝나버리게 된다.
+DECLARE
+    v_sum NUMBER(2,0) := 0;
+    v_n NUMBER(2,0) := 99;
+BEGIN
+    FOR v_n IN 1..10 LOOP  
+    DBMS_OUTPUT.PUT_LINE(v_n);
+    END LOOP;
+    DBMS_OUTPUT.PUT_LINE(v_n);
+    DBMS_OUTPUT.PUT_LINE(v_sum);
+END;
+/
+
+
+
+DECLARE
+     v_sum NUMBER(2,0) := 0;
+BEGIN
+    FOR num IN REVERSE 1..10 LOOP  
+        v_sum := v_sum + num;
+    END LOOP;
+        DBMS_OUTPUT.PUT_LINE(v_sum);
+END;
+/
+
+
+/*
+1. 다음과 같이 출력되도록 하시오.
+*
+**
+***
+****
+*****
+문자열 결합하기 || 연산자 사용
+*/
+-- 기본루프
+--내꺼
+DECLARE
+    v_cnt number := 0;
+    v_star varchar2(10);
+BEGIN
+    LOOP
+    v_star := v_star || '*';
+    DBMS_OUTPUT.PUT_LINE(v_star);
+     v_cnt := v_cnt + 1;
+    exit when v_cnt > 5;
+    END LOOP;
+    
+END;
+/
+--교수님꺼
+DECLARE
+    v_tree VARCHAR2(6 char) := '';
+    v_line NUMBER(1, 0) := 1;
+BEGIN
+    LOOP
+        v_tree := v_tree || '*';
+        DBMS_OUTPUT.PUT_LINE(v_tree);
+        v_line := v_line + 1;
+        EXIT WHEN v_line > 5;
+    END LOOP;
+    
+END;
+/
+-- for루프
+--내꺼
+DECLARE
+     v_cnt number := 0;
+     v_star varchar2(10);
+BEGIN
+    FOR i IN REVERSE 1..5 LOOP  
+       v_star := v_star || '*';
+       v_cnt := v_cnt + i;
+       DBMS_OUTPUT.PUT_LINE(v_star);   
+    END LOOP;  
+END;
+/
+--교수님꺼
+DECLARE
+    v_tree VARCHAR2(6 char) := '';
+BEGIN
+ FOR num in 1..5 -- num : readonly 용도로 사용함.
+    LOOP
+        v_tree := v_tree || '*';
+        DBMS_OUTPUT.PUT_LINE(v_tree);
+    END LOOP;
+END;
+/
+
+-- 이중 for 문 : 한줄 당 하나씩 추가되는 규칙때문에 사용이 가능하다. 별도의 변수를 사용하지 않고 아스타를 반복.
+
+BEGIN
+ FOR line in 1..5 LOOP -- 줄바꿈을 반복
+    FOR star in 1..line LOOP -- *을 반복
+        DBMS_OUTPUT.PUT('*');
+        END LOOP;
+        DBMS_OUTPUT.PUT_LINE(' ');  --해당줄의 아스타를 출력했으니 줄을 바꾸겠다.
+    END LOOP;
+END;
+/
+
+--응용
+DECLARE
+    v_line NUMBER(1,0) := 1;
+    v_star NUMBER(1,0) := 1;
+BEGIN
+        LOOP 
+            v_star := 1;  --주석처리하면 *이 하나씩 한줄에 출력된다.
+            LOOP
+                DBMS_OUTPUT.PUT('*');
+                v_star := v_star + 1;
+                EXIT WHEN v_star > v_line;
+            END LOOP;
+            DBMS_OUTPUT.PUT_LINE(' ');
+            v_line := v_line + 1;
+            EXIT WHEN v_line > 5;
+        END LOOP;
+END;
+/
+
+
+-- while루프
+-- 내꺼
+DECLARE
+    v_cnt number := 0;
+    v_star varchar2(10);  
+    BEGIN
+    WHILE v_cnt <= 5 
+    LOOP
+    v_star := v_star || '*';
+    DBMS_OUTPUT.PUT_LINE(v_star);
+     v_cnt := v_cnt + 1;
+    END LOOP;
+    
+END;
+/
+
+--교수님꺼
+DECLARE
+    v_tree VARCHAR2(6 char) := '';
+    v_line NUMBER(1, 0) := 1;
+BEGIN
+ WHILE v_line <= 5
+    LOOP
+        v_tree := v_tree || '*';
+        DBMS_OUTPUT.PUT_LINE(v_tree);
+        v_line := v_line + 1;
+    END LOOP;
+END;
+/
+
+
+--익수씨거
+
+DECLARE
+    v_tree VARCHAR2(6 char) := '*';
+BEGIN
+ WHILE length(v_tree) <= 5
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(v_tree);
+        v_tree := v_tree || '*';
+    END LOOP;
+END;
+/
