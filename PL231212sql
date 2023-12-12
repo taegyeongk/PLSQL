@@ -1,0 +1,435 @@
+SET SERVEROUTPUT ON
+
+/*
+2. 치환변수를 사용하면 숫자를 입력하면 해당 구구단이 출력되도록 하시오.
+// 입력 : 단
+// 출력 : 특정 포맷 (단 * 곱하는 수 = 실제결과)
+--> 곱하는 수 : 1에서 9까지 정수의 값
+*/
+--기본루프
+DECLARE
+    v_cnt NUMBER  := &단;
+    v_mul NUMBER := 1;
+BEGIN
+    LOOP
+    DBMS_OUTPUT.PUT_LINE(v_cnt || ' * ' || v_mul || ' = ' || (v_cnt*v_mul));
+    v_mul := v_mul+1;
+    EXIT WHEN v_mul > 9;
+    END LOOP;
+END;
+/
+
+-- for 루프
+DECLARE
+    v_cnt NUMBER(1,0)  := &단;
+BEGIN
+    FOR v_mul in 1..9 LOOP
+    DBMS_OUTPUT.PUT_LINE(v_cnt || ' * ' || v_mul || '=' || (v_cnt * v_mul));
+    END LOOP;
+END;
+/
+
+--while 루프
+DECLARE
+    v_cnt NUMBER  := &단;
+    v_mul NUMBER := 1;
+BEGIN
+    WHILE v_mul <=9 LOOP
+    DBMS_OUTPUT.PUT_LINE(v_cnt || ' * ' || v_mul || ' = ' || (v_cnt*v_mul));
+    v_mul := v_mul+1;
+    END LOOP;
+END;
+/
+
+/* 3. 구구단 2~9단까지 출력되도록 하시오.
+4. 구구단 1~9단까지 출력되도록 하시오.(단 , 홀수단 출력)
+*/
+
+-- 3번
+BEGIN
+    FOR i IN 2..9 LOOP
+        DBMS_OUTPUT.PUT_LINE( i || '단');
+        FOR v_mul IN 1..9 LOOP
+            DBMS_OUTPUT.PUT_LINE(i || ' * ' || v_mul || ' = ' || ( i * v_mul));  
+        END LOOP;
+        DBMS_OUTPUT.PUT_LINE(' ');
+    END LOOP;   
+END;
+/
+
+-- 3번 옆으로 출력
+DECLARE
+    v_dan NUMBER(2,0) := 2;
+    v_num NUMBER(2,0) := 1;
+    v_msg VARCHAR2(1000);
+BEGIN
+    while v_num < 10 LOOP
+        v_dan := 2;
+            WHILE v_dan < 10 LOOP
+                v_msg := v_dan || ' X ' || v_num || ' = ' || ( v_dan * v_num) || ' '; 
+                DBMS_OUTPUT.PUT(RPAD(v_msg, 12, '  ')); --RPAD : 오른쪽을 채워서 정렬하겠다.
+                v_dan := v_dan + 1;
+        END LOOP;
+        DBMS_OUTPUT.PUT_LINE(' ');
+            v_num := v_num + 1;
+    END LOOP;   
+END;
+/
+
+-- 4번 / mod (가지고 있는 숫자, 나누는 수) => 나머지
+BEGIN
+    FOR v_cnt IN 1..9 LOOP
+         IF mod(v_cnt,2) <> 0 THEN
+         FOR v_mul in 1..9 LOOP
+            DBMS_OUTPUT.PUT_LINE(v_cnt || ' * ' || v_mul || ' = ' || (v_cnt*v_mul));    
+        END LOOP;
+        DBMS_OUTPUT.PUT_LINE(' ');  
+        END IF;    
+    END LOOP;
+END;
+/
+
+-- CONTINUE 방식 : 콜백함수 이용으로 사용되면 멈춤
+BEGIN
+    FOR v_cnt IN 1..9 LOOP
+         IF mod(v_cnt,2) = 0 THEN
+            CONTINUE; -- 반복문에서 다음 코드로 진행하겠다는 의미
+        END IF;
+        FOR v_mul in 1..9 LOOP
+            DBMS_OUTPUT.PUT_LINE(v_cnt || ' * ' || v_mul || ' = ' || (v_cnt*v_mul));    
+        END LOOP;
+        DBMS_OUTPUT.PUT_LINE(' ');  
+    END LOOP;
+END;
+/
+
+--RECORD 기본 구조
+--DECLARE
+--    TYPE IS RECORD
+--    (실제 정의되는 필드);
+--BEGIN 
+--
+--END;
+--/
+DECLARE
+    TYPE info_rec_type IS RECORD
+    (no NUMBER NOT NULL := 1,name VARCHAR2(1000) := 'No Name',birth DATE);
+    user_info info_rec_type; --변수선언 타입과 같은 변수이름 사용해야함.
+BEGIN 
+    DBMS_OUTPUT.PUT_LINE(user_info.no);
+    user_info.birth := sysdate;
+    DBMS_OUTPUT.PUT_LINE(user_info.birth);
+END;
+/
+
+DECLARE
+-- %ROWTYPE : 하나의 테이블에서만 불러올 수 있기때문에 서브쿼리나 조인할때는 한계가 있다.
+    emp_info_rec employees%ROWTYPE;
+    
+BEGIN
+    SELECT * 
+    INTO emp_info_rec
+    FROM employees
+    WHERE employee_id = &사원번호;
+    DBMS_OUTPUT.PUT_LINE(emp_info_rec.employee_id);
+    DBMS_OUTPUT.PUT_LINE(emp_info_rec.last_name);
+    DBMS_OUTPUT.PUT_LINE(emp_info_rec.job_id);
+END;
+/
+
+
+-- 사원번호, 이름 , 부서이름 
+DECLARE
+    TYPE emp_rec_type IS RECORD
+    (eid employees.employee_id%TYPE, ename employees.last_name%TYPE, deptname departments.department_name%TYPE);
+    emp_rec emp_rec_type;
+BEGIN
+    SELECT employee_id, last_name, department_name
+    INTO emp_rec
+    FROM employees e join departments d on (e.department_id = d.department_id)
+    WHERE employee_id = &사원번호;
+
+    DBMS_OUTPUT.PUT_LINE(emp_rec.ename);
+-- 정의한 필드수 만큼 출력해줘야함.
+END;
+/
+
+-- Table
+DECLARE
+    -- 1) 정의 (레코드와 다르게 필드이름이 없음)
+    TYPE num_table_type IS TABLE OF NUMBER
+        INDEX BY BINARY_INTEGER;
+    -- 2) 선언
+    num_list num_table_type;
+BEGIN
+    -- array [0] => table(0)
+    num_list(-1000) := 1;
+    num_list(1234) := 2;
+    num_list(11111) := 3;
+    
+    DBMS_OUTPUT.PUT_LINE(num_list.count); --내부값이 몇개있는지 : count 메소드 호출
+    DBMS_OUTPUT.PUT_LINE(num_list(1234)); --1234인덱스의 데이터 값?
+END;
+/
+
+
+-- 2의 배수 결과값 담아보기
+DECLARE
+    -- 1) 정의 (레코드와 다르게 필드이름이 없음)
+    TYPE num_table_type IS TABLE OF NUMBER
+        INDEX BY BINARY_INTEGER;
+    -- 2) 선언
+    num_list num_table_type;
+BEGIN
+    -- array [0] => table(0)
+    FOR i IN 1..9 LOOP
+        num_list(i) := 2 * 1; 
+    END LOOP;
+    FOR idx IN num_list.FIRST .. num_list.LAST LOOP
+        IF num_list.EXISTS(idx) THEN
+            DBMS_OUTPUT.PUT_LINE(num_list(idx));
+        END IF;
+    END LOOP;
+END;
+/
+
+-- 테이블인데 레코드 타입이 들어가는 경우
+DECLARE 
+    TYPE emp_table_type IS TABLE OF employees%ROWTYPE
+        INDEX BY BINARY_INTEGER;
+        
+    emp_table emp_table_type;
+    emp_rec employees%ROWTYPE;
+    -- select한 결과값에 다 담기가 어렵기 때문에 emp_rec으로 타입을 데려와서 사용한다.
+BEGIN
+    FOR eid IN 100.. 110 LOOP
+        SELECT * 
+        INTO emp_rec
+        FROM employees
+        WHERE employee_id = eid;
+        emp_table(eid) := emp_rec;
+    END LOOP;
+    DBMS_OUTPUT.PUT_LINE(emp_table(100).employee_id);
+    DBMS_OUTPUT.PUT_LINE(emp_table(100).last_name);
+END;
+/
+
+SELECT * FROM employees ORDER BY employee_id;
+
+
+
+DECLARE 
+    TYPE emp_table_type IS TABLE OF employees%ROWTYPE
+        INDEX BY BINARY_INTEGER;
+        
+    emp_table emp_table_type;
+    emp_rec employees%ROWTYPE;
+BEGIN
+    FOR eid IN 100.. 110 LOOP
+        SELECT * 
+        INTO emp_rec
+        FROM employees
+        WHERE employee_id = eid;
+        emp_table(eid) := emp_rec;
+    END LOOP;
+    
+    FOR idx IN emp_table.FIRST.. emp_table.LAST LOOP
+    
+    DBMS_OUTPUT.PUT(emp_table(idx).employee_id || ' , ');
+    DBMS_OUTPUT.PUT_LINE(emp_table(idx).last_name);
+ 
+    END LOOP;
+ 
+END;
+/
+
+-- employee table 전체 데이터를 가지고 오는법.
+DECLARE
+    v_min employees.employee_id%TYPE; -- 최소 사원번호
+    v_MAX employees.employee_id%TYPE; -- 최대 사원번호
+    v_result NUMBER(1,0);             -- 사원의 존재유무를 확인
+    emp_record employees%ROWTYPE;     -- Employees 테이블의 한 행에 대응
+    
+    TYPE emp_table_type IS TABLE OF emp_record%TYPE
+        INDEX BY PLS_INTEGER;
+    
+    emp_table emp_table_type;
+BEGIN
+    -- 최소 사원번호, 최대 사원번호
+    SELECT MIN(employee_id), MAX(employee_id)
+    INTO v_min, v_max
+    FROM employees;
+    
+    FOR eid IN v_min .. v_max LOOP
+        SELECT COUNT(*)
+        INTO v_result
+        FROM employees
+        WHERE employee_id = eid;
+        
+        IF v_result = 0 THEN
+            CONTINUE;
+        END IF;
+        
+        SELECT *
+        INTO emp_record
+        FROM employees
+        WHERE employee_id = eid;
+        
+        emp_table(eid) := emp_record;     
+    END LOOP;
+    
+    FOR eid IN emp_table.FIRST .. emp_table.LAST LOOP
+        IF emp_table.EXISTS(eid) THEN
+            DBMS_OUTPUT.PUT(emp_table(eid).employee_id || ', ');
+            DBMS_OUTPUT.PUT_LINE(emp_table(eid).last_name);
+        END IF;
+    END LOOP;    
+END;
+/
+
+-- CURSOR
+DECLARE
+    CURSOR emp_dept_cursor IS
+        SELECT employee_id, last_name
+        FROM employees
+        WHERE department_id = &부서번호;
+        v_eid employees.employee_id%TYPE;
+        v_ename employees.last_name%TYPE;
+BEGIN
+    OPEN emp_dept_cursor;
+    
+    FETCH emp_dept_cursor INTO v_eid, v_ename;
+    DBMS_OUTPUT.PUT_LINE(v_eid);
+    DBMS_OUTPUT.PUT_LINE(v_ename);
+    
+    CLOSE emp_dept_cursor;
+END;
+/
+SELECT employee_id, last_name
+        FROM employees
+        WHERE department_id = 50;
+        
+        
+        
+DECLARE
+    CURSOR emp_info_cursor IS
+        SELECT employee_id eid, last_name ename, hire_date hdate -- 별칭 사용가능(SELECT 한 값을 덮어씀)
+        FROM employees
+        WHERE department_id = &부서번호
+        ORDER BY hire_date DESC;
+    emp_rec emp_info_cursor%ROWTYPE; --SELECT 문에서 3개의 변수중에서 하나만 선택.
+BEGIN
+    OPEN emp_info_cursor;
+        LOOP
+            FETCH emp_info_cursor INTO emp_rec;
+            EXIT WHEN emp_info_cursor%NOTFOUND;
+            -- EXIT WHEN emp_info_cursor%NOTFOUND OR emp_info_cursor%ROWCOUNT > 10;
+            -- EXIT WHEN emp_info_cursor%ROWCOUNT > 10;
+            -- fetch와 exit 는 같이 움직인다.
+            -- ROWCOUNT 를 루프문 안에서 사용하게 되면 몇개가 아님. 루프문 바깥에서 유효. 안에서는 현재 해당하는 행이 몇번재인지를 나타냄
+            DBMS_OUTPUT.PUT(emp_info_cursor%ROWCOUNT || ' , ');
+            DBMS_OUTPUT.PUT(emp_rec.eid || ' , ');
+            DBMS_OUTPUT.PUT(emp_rec.ename || ' , ');
+            DBMS_OUTPUT.PUT_LINE(emp_rec.hdate);
+            
+        END LOOP;
+        --  커서의 총 데이터 숫자/ 루프문이 끝났는데도 ROWCOUNT가 0이라면 FETCH 문이 돌려줄 값이 없다
+        IF emp_info_cursor%ROWCOUNT = 0 THEN -- IF문은 CLOSE 가 실행되기 전에 반드시 실행해야함. 커서가 끝난 후 실행하면 INVALID CURSOR 예외사항 발생.
+            DBMS_OUTPUT.PUT_LINE('현재 커서의 데이터는 존재하지 않습니다.');
+        END IF;
+        CLOSE emp_info_cursor;
+END;
+/
+
+
+
+-- 1) 모든 사원의 사원번호, 이름 , 부서이름 출력 (커서 fetch 사용 예제)
+-- 입력 : x
+-- 출력 : 사원번호, 이름 , 부서이름 => 테이블 : employees + departments
+
+
+SELECT e.employee_id, e.last_name, d.department_name
+FROM employees e LEFT JOIN departments d on (e.department_id = d.department_id)
+ORDER BY e.employee_id DESC;
+    
+DECLARE        
+    CURSOR emp_list_cursor IS 
+    SELECT e.employee_id, e.last_name, d.department_name
+        FROM employees e LEFT JOIN departments d on (e.department_id = d.department_id)
+        ORDER BY e.employee_id;
+    emp_rec emp_list_cursor%ROWTYPE;
+BEGIN
+    OPEN emp_list_cursor;
+        LOOP
+            FETCH emp_list_cursor INTO emp_rec;
+            EXIT WHEN emp_list_cursor%NOTFOUND;
+            
+            DBMS_OUTPUT.PUT(emp_rec.employee_id || ' , ');
+            DBMS_OUTPUT.PUT(emp_rec.last_name || ' , ');
+            DBMS_OUTPUT.PUT_LINE(emp_rec.department_name);
+
+        END LOOP;  
+    CLOSE emp_list_cursor;
+END;
+/
+
+-- 2) 부서번호가 50이거나 80인 사원들의 사원이름, 급여 , 연봉을 출력
+-- 보기중에서 선택했을때 출력되는 연산자 : in 
+-- 연봉 : (급여 * 12 + (NVL(급여,0) * NVL(커미션,0) * 12))
+
+SELECT department_id, last_name, salary, (salary * 12 + (NVL(salary,0) * NVL(commission_pct,0) * 12))as annual
+FROM employees
+WHERE department_id in (50,80)
+ORDER BY department_id;
+
+
+DECLARE
+    CURSOR emp_sal_cursor IS
+        SELECT department_id, last_name, salary, (salary * 12 + (NVL(salary,0) * NVL(commission_pct,0) * 12))as annual
+        FROM employees
+        WHERE department_id in (50,80)
+        ORDER BY department_id;
+    emp_rec emp_sal_cursor%ROWTYPE;
+    -- ROWTYPE : 사용하지 않으면 커서에 접근불가
+BEGIN
+    /*
+    -- 커서 상태를 확인하고 싶을때 커서가 열려있지 않을때 상태를 확인
+    IF NOT emp_sal_cursor%ISOPEN THEN
+        OPEN emp_sal_cursor;
+    END IF;
+    */
+    OPEN emp_sal_cursor;
+    LOOP
+    FETCH emp_sal_cursor INTO emp_rec;
+    EXIT WHEN emp_sal_cursor%NOTFOUND;
+            DBMS_OUTPUT.PUT(emp_rec.department_id || ' , ');
+            DBMS_OUTPUT.PUT(emp_rec.last_name || ' , ');
+            DBMS_OUTPUT.PUT(emp_rec.salary || ' , ');
+            DBMS_OUTPUT.PUT_LINE(emp_rec.annual);
+    END LOOP;
+    CLOSE emp_sal_cursor;
+END;
+/
+
+-- 커미션으로 제한할 경우
+DECLARE
+    CURSOR emp_sal_cursor IS
+        SELECT employee_id,salary,commission_pct, (salary * 12 + (NVL(salary,0) * NVL(commission_pct,0) * 12))as annual
+        FROM employees
+        WHERE department_id in (50,80);
+        
+        v_eid employees.employee_id%TYPE;
+        v_sal employees.salary%TYPE;
+        v_comm employees.commission_pct%TYPE;
+        v_annual v_sal%TYPE;
+BEGIN
+    OPEN emp_sal_cursor;
+    LOOP
+    FETCH emp_sal_cursor INTO v_eid, v_sal, v_comm, v_annual;
+    EXIT WHEN emp_sal_cursor%NOTFOUND;
+        v_annual := NVL(v_sal,0)* 12 + NVL(v_sal,0) * NVL(v_comm,0) * 12;
+        DBMS_OUTPUT.PUT_LINE(v_eid || ' , ' || v_sal || ' , ' || v_annual);
+    END LOOP;
+    CLOSE emp_sal_cursor;
+END;
+/
