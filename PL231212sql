@@ -156,7 +156,7 @@ END;
 
 -- Table
 DECLARE
-    -- 1) 정의 (레코드와 다르게 필드이름이 없음)
+    -- 1) 정의 (레코드와 다르게 필드이름이 없음, 레코드보다는 상대적으로 간단하나 편하지는 않음 / 0부터 시작하는것이 아니다)
     TYPE num_table_type IS TABLE OF NUMBER
         INDEX BY BINARY_INTEGER;
     -- 2) 선언
@@ -209,7 +209,7 @@ BEGIN
         WHERE employee_id = eid;
         emp_table(eid) := emp_rec;
     END LOOP;
-    DBMS_OUTPUT.PUT_LINE(emp_table(100).employee_id);
+    DBMS_OUTPUT.PUT_LINE(emp_table(100).employee_id); -- 객체 방식과 동일하게 접근
     DBMS_OUTPUT.PUT_LINE(emp_table(100).last_name);
 END;
 /

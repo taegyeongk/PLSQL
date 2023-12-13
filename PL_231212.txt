@@ -2,8 +2,8 @@ SET SERVEROUTPUT ON
 
 /*
 
-2. ì¹˜í™˜ë³€ìˆ˜(&)ë¥¼ ì‚¬ìš©í•˜ë©´ ìˆ«ìžë¥¼ ìž…ë ¥í•˜ë©´ í•´ë‹¹ êµ¬êµ¬ë‹¨ì´ ì¶œë ¥ë˜ë„ë¡ í•˜ì‹œì˜¤.
-ì˜ˆ) 2 ìž…ë ¥ì‹œ
+2. Ä¡È¯º¯¼ö(&)¸¦ »ç¿ëÇÏ¸é ¼ýÀÚ¸¦ ÀÔ·ÂÇÏ¸é ÇØ´ç ±¸±¸´ÜÀÌ Ãâ·ÂµÇµµ·Ï ÇÏ½Ã¿À.
+¿¹) 2 ÀÔ·Â½Ã
 2 * 1 = 2
 2 * 2 = 4
 2 * 3 = 6
@@ -14,15 +14,15 @@ SET SERVEROUTPUT ON
 2 * 8 = 16
 2 * 9 = 18
 
-ìž…ë ¥ : ë‹¨
-ì¶œë ¥ : íŠ¹ì • í¬ë§· ( ë‹¨ * ê³±í•˜ëŠ” ìˆ˜ = ê²°ê³¼ ) 
+ÀÔ·Â : ´Ü
+Ãâ·Â : Æ¯Á¤ Æ÷¸Ë ( ´Ü * °öÇÏ´Â ¼ö = °á°ú ) 
 
-=> ê³±í•˜ëŠ” ìˆ˜ : 1 ì—ì„œ 9 ì‚¬ì´ì˜ ì •ìˆ˜ê°’ 
+=> °öÇÏ´Â ¼ö : 1 ¿¡¼­ 9 »çÀÌÀÇ Á¤¼ö°ª 
 */
 
 -- FOR LOOP
 DECLARE
-    v_dan NUMBER(1,0) := &ë‹¨;
+    v_dan NUMBER(1,0) := &´Ü;
 BEGIN
     FOR v_num IN 1..9 LOOP
         DBMS_OUTPUT.PUT_LINE(v_dan ||' * ' || v_num || ' = ' || (v_dan * v_num));
@@ -30,50 +30,50 @@ BEGIN
 END;
 /
 
--- ê¸°ë³¸ LOOP
+-- ±âº» LOOP
 DECLARE
-    -- ë‹¨ : ìˆ«ìžíƒ€ìž…, ì¹˜í™˜ë³€ìˆ˜ë¡œ ìž…ë ¥
-    v_dan NUMBER := &ë‹¨;
+    -- ´Ü : ¼ýÀÚÅ¸ÀÔ, Ä¡È¯º¯¼ö·Î ÀÔ·Â
+    v_dan NUMBER := &´Ü;
     v_num NUMBER := 1;
 BEGIN
-   -- ë°˜ë³µë¬¸ ì‹œìž‘
+   -- ¹Ýº¹¹® ½ÃÀÛ
    LOOP
-        -- ì¶œë ¥ : ë‹¨ * ê³±í•˜ëŠ” ìˆ˜ = (ë‹¨ * ê³±í•˜ëŠ” ìˆ˜)
+        -- Ãâ·Â : ´Ü * °öÇÏ´Â ¼ö = (´Ü * °öÇÏ´Â ¼ö)
         DBMS_OUTPUT.PUT_LINE(v_dan||'*'||v_num||'='||(v_dan * v_num));
-        -- ì´ë•Œ ê³±í•˜ëŠ” ìˆ˜ëŠ” 1ë¶€í„° 9ê¹Œì§€ 1ì”© ì¦ê°€ => ë°˜ë³µë¬¸ìœ¼ë¡œ ì œì–´
+        -- ÀÌ¶§ °öÇÏ´Â ¼ö´Â 1ºÎÅÍ 9±îÁö 1¾¿ Áõ°¡ => ¹Ýº¹¹®À¸·Î Á¦¾î
         v_num := v_num + 1;
         EXIT WHEN v_num > 9;
-   -- ë°˜ë³µë¬¸ ì¢…ë£Œ
+   -- ¹Ýº¹¹® Á¾·á
    END LOOP;
 END;
 /
 
 -- WHILE LOOP
 DECLARE
-    -- ë‹¨ : ìˆ«ìžíƒ€ìž…, ì¹˜í™˜ë³€ìˆ˜ë¡œ ìž…ë ¥
-    v_dan NUMBER := &ë‹¨;
+    -- ´Ü : ¼ýÀÚÅ¸ÀÔ, Ä¡È¯º¯¼ö·Î ÀÔ·Â
+    v_dan NUMBER := &´Ü;
     v_num NUMBER := 1;
 BEGIN
-   -- ë°˜ë³µë¬¸ ì‹œìž‘
+   -- ¹Ýº¹¹® ½ÃÀÛ
     WHILE v_num <= 9 LOOP
-        -- ì¶œë ¥ : ë‹¨ * ê³±í•˜ëŠ” ìˆ˜ = (ë‹¨ * ê³±í•˜ëŠ” ìˆ˜)
+        -- Ãâ·Â : ´Ü * °öÇÏ´Â ¼ö = (´Ü * °öÇÏ´Â ¼ö)
         DBMS_OUTPUT.PUT_LINE(v_dan||'*'||v_num||'='||(v_dan * v_num));
-        -- ì´ë•Œ ê³±í•˜ëŠ” ìˆ˜ëŠ” 1ë¶€í„° 9ê¹Œì§€ 1ì”© ì¦ê°€ => ë°˜ë³µë¬¸ìœ¼ë¡œ ì œì–´
+        -- ÀÌ¶§ °öÇÏ´Â ¼ö´Â 1ºÎÅÍ 9±îÁö 1¾¿ Áõ°¡ => ¹Ýº¹¹®À¸·Î Á¦¾î
         v_num := v_num + 1;
 
-   -- ë°˜ë³µë¬¸ ì¢…ë£Œ
+   -- ¹Ýº¹¹® Á¾·á
    END LOOP;
 END;
 /
 
 /*
-3. êµ¬êµ¬ë‹¨ 2~9ë‹¨ê¹Œì§€ ì¶œë ¥ë˜ë„ë¡ í•˜ì‹œì˜¤.
+3. ±¸±¸´Ü 2~9´Ü±îÁö Ãâ·ÂµÇµµ·Ï ÇÏ½Ã¿À.
 */
 
 -- FOR LOOP
 BEGIN
-    FOR v_dan IN 2..9 LOOP -- íŠ¹ì • ë‹¨ì„ 2~9ê¹Œì§€ ë°˜ë³µí•˜ëŠ” LOOPë¬¸
-        FOR v_num IN 1..9 LOOP -- íŠ¹ì • ë‹¨ì˜ 1~9ê¹Œì§€ ê³±í•˜ëŠ” LOOPë¬¸
+    FOR v_dan IN 2..9 LOOP -- Æ¯Á¤ ´ÜÀ» 2~9±îÁö ¹Ýº¹ÇÏ´Â LOOP¹®
+        FOR v_num IN 1..9 LOOP -- Æ¯Á¤ ´ÜÀÇ 1~9±îÁö °öÇÏ´Â LOOP¹®
              DBMS_OUTPUT.PUT_LINE(v_dan || ' X ' || v_num || ' = ' || ( v_dan * v_num ));  
         END LOOP;
         DBMS_OUTPUT.PUT_LINE('');
@@ -86,9 +86,9 @@ DECLARE
     v_num NUMBER(2,0) := 1;
     v_msg VARCHAR2(1000);
 BEGIN
-    WHILE v_num < 10 LOOP  -- íŠ¹ì • ë‹¨ì˜ 1~9ê¹Œì§€ ê³±í•˜ëŠ” LOOPë¬¸
+    WHILE v_num < 10 LOOP  -- Æ¯Á¤ ´ÜÀÇ 1~9±îÁö °öÇÏ´Â LOOP¹®
         v_dan := 2;
-        WHILE v_dan < 10 LOOP -- íŠ¹ì • ë‹¨ì„ 2~9ê¹Œì§€ ë°˜ë³µí•˜ëŠ” LOOPë¬¸
+        WHILE v_dan < 10 LOOP -- Æ¯Á¤ ´ÜÀ» 2~9±îÁö ¹Ýº¹ÇÏ´Â LOOP¹®
             v_msg := v_dan || ' X ' || v_num || ' = ' || ( v_dan * v_num ) || ' ';
             DBMS_OUTPUT.PUT(RPAD(v_msg, 12, ' '));
             v_dan := v_dan + 1;
@@ -99,14 +99,14 @@ BEGIN
 END;
 /
 
--- ê¸°ë³¸ LOOP
+-- ±âº» LOOP
 DECLARE
     v_dan NUMBER(2,0) := 2;
     v_num NUMBER(2,0) := 1;
 BEGIN
-    LOOP -- ë‹¨
+    LOOP -- ´Ü
         v_num := 1;
-        LOOP -- ê³±í•˜ëŠ” ìˆ˜
+        LOOP -- °öÇÏ´Â ¼ö
             DBMS_OUTPUT.PUT_LINE(v_dan || ' X ' || v_num || ' = ' || ( v_dan * v_num ));
             v_num := v_num + 1;
             EXIT WHEN v_num > 9;
@@ -118,17 +118,17 @@ END;
 /
 
 /*
-4. êµ¬êµ¬ë‹¨ 1~9ë‹¨ê¹Œì§€ ì¶œë ¥ë˜ë„ë¡ í•˜ì‹œì˜¤.
-   (ë‹¨, í™€ìˆ˜ë‹¨ ì¶œë ¥)
+4. ±¸±¸´Ü 1~9´Ü±îÁö Ãâ·ÂµÇµµ·Ï ÇÏ½Ã¿À.
+   (´Ü, È¦¼ö´Ü Ãâ·Â)
    
-   MOD(ê°€ì§€ê³  ìžˆëŠ” ìˆ«ìž, ë‚˜ëˆ„ëŠ” ìˆ˜) => ë‚˜ë¨¸ì§€
+   MOD(°¡Áö°í ÀÖ´Â ¼ýÀÚ, ³ª´©´Â ¼ö) => ³ª¸ÓÁö
 */
 
--- FOR LOOP + IFë¬¸
+-- FOR LOOP + IF¹®
 BEGIN
-    FOR v_dan IN 1..9 LOOP -- íŠ¹ì • ë‹¨ì„ 2~9ê¹Œì§€ ë°˜ë³µí•˜ëŠ” LOOPë¬¸
+    FOR v_dan IN 1..9 LOOP -- Æ¯Á¤ ´ÜÀ» 2~9±îÁö ¹Ýº¹ÇÏ´Â LOOP¹®
         IF MOD(v_dan, 2) <> 0 THEN
-            FOR v_num IN 1..9 LOOP -- íŠ¹ì • ë‹¨ì˜ 1~9ê¹Œì§€ ê³±í•˜ëŠ” LOOPë¬¸
+            FOR v_num IN 1..9 LOOP -- Æ¯Á¤ ´ÜÀÇ 1~9±îÁö °öÇÏ´Â LOOP¹®
                 DBMS_OUTPUT.PUT_LINE(v_dan || ' X ' || v_num || ' = ' || ( v_dan * v_num ));  
             END LOOP;
             DBMS_OUTPUT.PUT_LINE('');
@@ -137,14 +137,14 @@ BEGIN
 END;
 /
 
--- FOR LOOP + IFë¬¸
+-- FOR LOOP + IF¹®
 BEGIN
-    FOR v_dan IN 1..9 LOOP -- íŠ¹ì • ë‹¨ì„ 2~9ê¹Œì§€ ë°˜ë³µí•˜ëŠ” LOOPë¬¸
+    FOR v_dan IN 1..9 LOOP -- Æ¯Á¤ ´ÜÀ» 2~9±îÁö ¹Ýº¹ÇÏ´Â LOOP¹®
         IF MOD(v_dan, 2) = 0 THEN 
             CONTINUE;
         END IF;
         
-        FOR v_num IN 1..9 LOOP -- íŠ¹ì • ë‹¨ì˜ 1~9ê¹Œì§€ ê³±í•˜ëŠ” LOOPë¬¸
+        FOR v_num IN 1..9 LOOP -- Æ¯Á¤ ´ÜÀÇ 1~9±îÁö °öÇÏ´Â LOOP¹®
             DBMS_OUTPUT.PUT_LINE(v_dan || ' X ' || v_num || ' = ' || ( v_dan * v_num ));  
         END LOOP;
         DBMS_OUTPUT.PUT_LINE('');
