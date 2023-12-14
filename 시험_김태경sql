@@ -1,0 +1,203 @@
+SET SERVEROUTPUT ON
+
+-- 2
+DECLARE
+    v_deptname departments.department_name%TYPE;
+    v_job_id employees.job_id%TYPE;
+    v_sal employees.salary%TYPE;
+    v_annual v_sal%TYPE;
+    v_comm employees.commission_pct%type;
+
+BEGIN
+    SELECT department_name, job_id, salary, (salary * 12 + (NVL (salary, 0) * NVL (commission_pct, 0) * 12)), commission_pct
+    INTO v_deptname, v_job_id, v_sal, v_annual, v_comm
+    FROM employees e join departments d on (e.department_id = d.department_id)
+    where employee_id = &사원번호;
+    
+    DBMS_OUTPUT.PUT_LINE('부서이름 : ' || v_deptname|| ',' || 'job_id : '|| v_job_id || '월급 : '|| v_sal|| '연봉 : ' || v_annual || '커미션 :' || v_comm);
+--    IF salary and annual is null then
+--        raise emp_no;
+END;
+/
+
+
+SELECT department_name, job_id, salary, (salary * 12 + (NVL (salary, 0) * NVL (commission_pct, 0) * 12))
+from employees e join departments d on (e.department_id = d.department_id)
+where employee_id = 100;
+
+
+--3. 
+DECLARE 
+v_hdate employees.hire_date%TYPE;
+BEGIN
+
+SELECT hire_date
+INTO v_hdate
+FROM employees
+WHERE employee_id = &사원번호;
+
+IF TO_CHAR(v_hdate,'yyyy') > '2015' THEN
+        DBMS_OUTPUT.PUT_LINE('New employee');
+    ELSE
+       DBMS_OUTPUT.PUT_LINE('Carrer employee');
+    END IF; 
+    
+END;
+/
+
+
+--4
+BEGIN
+    FOR v_mul IN 1..9 LOOP 
+        IF MOD(v_mul, 2) <> 0 THEN
+            FOR v_num IN 1..9 LOOP 
+                DBMS_OUTPUT.PUT_LINE(v_mul || ' X ' || v_num || ' = ' || ( v_mul * v_num ));  
+            END LOOP;
+            DBMS_OUTPUT.PUT_LINE('');
+        END IF;
+    END LOOP;
+END;
+/
+
+-- 5.
+select employee_id, last_name, salary
+from employees
+where employee_id = &사원번호;
+
+
+declare
+    cursor emp_list_cursor is
+        select employee_id, last_name, salary
+        from employees
+        where employee_id = &사원번호;
+        v_eid employees.employee_id%type;
+        v_ename employees.last_name%type;
+        v_sal employees.salary%type;
+begin
+    
+    open emp_list_cursor;
+        fetch emp_list_cursor into v_eid, v_ename, v_sal;
+        DBMS_OUTPUT.PUT_LINE('사번 : ' || v_eid || ', 이름 : ' || v_ename || ', 급여 : ' || v_sal);
+    
+    close emp_list_cursor;
+end;
+/
+
+-- 6. 
+--생성문
+CREATE OR REPLACE PROCEDURE Emp_update
+(v_eid in employees.employee_id%type, p_upsal in number)
+IS
+v_eid_emp EXCEPTION;
+BEGIN
+update employees
+set salary = salary * (1+ (p_upsal/100))
+where employee_id = v_eid;
+
+IF SQL%ROWCOUNT = 0 THEN
+        RAISE v_eid_emp;
+    END IF;
+    
+    EXCEPTION
+    WHEN v_eid_emp THEN
+        DBMS_OUTPUT.PUT_LINE('No search employee!!');
+END;
+/
+-- 실행문
+EXECUTE Emp_update(120, 10);
+
+select * from employees where employee_id = 120;
+
+--7. 
+
+CREATE OR REPLACE FUNCTION p_info(p_ssn IN VARCHAR2)
+RETURN NUMBER
+IS
+    v_age NUMBER;
+BEGIN
+    IF SUBSTR(p_ssn, 7,1) IN(1,2)  
+      THEN ;
+    ELSE v_age := EXTRACT(YEAR FROM SYSDATE) - (SUBSTR(p_ssn,1,2)+2000);
+    END IF;
+    v_age := v_age +1;
+    RETURN v_age;
+END;
+/
+
+
+
+-- 8.
+-- 생성문
+CREATE OR REPLACE FUNCTION emp_hiredate
+(empno employees.employee_id%TYPE) RETURN NUMBER
+IS
+    v_hdate NUMBER;
+BEGIN
+    SELECT TRUNC((SYSDATE - hire_date)/365)
+    INTO v_hdate
+    FROM employees
+    WHERE employee_id=empno;
+
+    RETURN v_hdate;
+END;
+/
+-- 실행문
+EXECUTE DBMS_OUTPUT.PUT_LINE(emp_hiredate(176)|| '년');
+
+
+
+--9. 
+CREATE OR REPLACE FUNCTION mgr_name
+(v_deptname departments.department_name%TYPE) 
+RETURN VARCHAR2
+IS
+    mgr_name VARCHAR2(10);
+BEGIN
+    SELECT last_name
+    INTO v_deptname
+    FROM employees
+    WHERE department_id = (   SELECT manager_id
+                            FROM departments
+                            WHERE department_name  = v_deptname
+                            AND manager_id is not null);
+    RETURN mgr_name;
+END;
+/
+
+drop function mgr_name;
+
+    SELECT last_name
+    FROM employees
+    WHERE department_id = (   SELECT manager_id
+                            FROM departments
+                            WHERE department_name  = v_deptname
+                            AND manager_id is not null)
+                            ;
+
+
+--10.
+SELECT name, text
+FROM user_source
+WHERE type IN ('PROCEDURE', 'FUNCTION', 'PACKAGE', 'PACKAGE BODY');
+
+
+
+--11. 
+
+DECLARE
+    v_line NUMBER(1,0) := 1;
+    v_star NUMBER(1,0) := 1;
+BEGIN
+        LOOP 
+            v_star := 10;
+            LOOP
+                DBMS_OUTPUT.PUT('*');
+                v_star := v_star - 1;
+                EXIT WHEN v_star > v_line;
+            END LOOP;
+            DBMS_OUTPUT.PUT_LINE(' ');
+            v_line := v_line + 1;
+            EXIT WHEN v_line > 5;
+        END LOOP;
+END;
+/

@@ -385,19 +385,199 @@ EXECUTE yedam_ju('0511013689977');
 사원번호를 입력할 경우
 삭제하는 TEST_PRO 프로시저를 생성하시오.
 단, 해당사원이 없는 경우 "해당사원이 없습니다." 출력
+-- 입력 : 사원번호
+-- 출력 : 없음
+-- 연산 : 입력받은 사원번호 삭제 => in 모드 사용 out 은 필요없음
 예) EXECUTE TEST_PRO(176)
 */
-CREATE OR REPLACE PROCEDURE test_pro
-(v_eid IN number)
+CREATE OR REPLACE PROCEDURE TEST_PRO
+(v_eid IN test_employee.employee_id%TYPE)
 IS
+    e_no_emp EXCEPTION;
 BEGIN
-    delete from employees
+    delete from test_employee
     where employee_id = v_eid;
     
-    DBMS_OUTPUT.PUT_LINE(v_eid, '해당사원이 없습니다.');
+    IF SQL%ROWCOUNT = 0 THEN
+    RAISE e_no_emp;
+    --DBMS_OUTPUT.PUT_LINE('해당사원이 없습니다.');
+    END IF;
+    EXCEPTION
+        WHEN e_no_emp THEN
+        DBMS_OUTPUT.PUT_LINE('해당사원이 없습니다.');
 END;
 /
 
-EXECUTE test_pro(176);
+EXECUTE TEST_PRO(176);
 
 
+/*
+3.
+다음과 같이 PL/SQL 블록을 실행할 경우 
+사원번호를 입력할 경우 사원의 이름(last_name)의 첫번째 글자를 제외하고는
+'*'가 출력되도록 yedam_emp 프로시저를 생성하시오.
+-- 입력 : 사원번호 => in
+--연산 : 1) select, 사원이름
+        2) 해당이름의 포맷 변경 : SUBSTR, LENGTH, RPAD(기준이 왼쪽인지, 오른쪽인지 보고 RPAD 혹은 LPAD 로 정하면됨)
+실행) EXECUTE yedam_emp(176)
+실행결과) TAYLOR -> T*****  <- 이름 크기만큼 별표(*) 출력
+*/
+CREATE OR REPLACE PROCEDURE yedam_emp
+(v_eid IN test_employee.employee_id%TYPE)
+IS 
+    v_ename test_employee.last_name%TYPE;  --매개변수로 사용되는 접두어이기 때문에 is 와 begin 사이에 적어줘야함.
+    v_result v_ename%TYPE;
+BEGIN
+    select last_name
+    INTO v_ename
+    from test_employee 
+    where employee_id = v_eid;
+    v_result := RPAD(SUBSTR(v_ename, 1,1), length(v_ename), '*');
+   DBMS_OUTPUT.PUT_LINE(v_ename || '->' || v_result);
+END;
+/
+
+EXECUTE yedam_emp(176);
+
+/*
+4.
+직원들의 사번, 급여 증가치만 입력하면 Employees테이블에 쉽게 사원의 급여를 갱신할 수 있는 y_update 프로시저를 작성하세요. 
+만약 입력한 사원이 없는 경우에는 ‘No search employee!!’라는 메시지를 출력하세요.(예외처리)
+-- 입력 : 사번, 급여 증가치(비율)
+-- 연산 : 급여 갱신 => 급여 증가치(비율) update
+    1) update employees
+    set salary = salary + ( 급여증가치/100); -- 급여증가치가 정수일때
+    2) set salary = salary + (salary * 급여증가치); -- 급여증가치가 소수일때
+-- 예외처리
+실행) EXECUTE y_update(200, 10)
+*/
+CREATE OR REPLACE PROCEDURE y_update
+(v_eid IN employees.employee_id%TYPE, p_raise IN NUMBER)
+IS
+p_eid_emp EXCEPTION; 
+BEGIN
+    update employees
+    set salary = salary + (salary * p_raise/100);
+    
+    IF SQL%ROWCOUNT = 0 THEN
+        RAISE p_eid_emp;
+    END IF;
+    EXCEPTION
+    WHEN p_eid_emp THEN
+        DBMS_OUTPUT.PUT_LINE('No search employee!!');
+END;
+/
+
+EXECUTE y_update(200, 10);
+
+select salary from employees where employee_id=200;
+
+
+CREATE OR REPLACE PROCEDURE y_update
+(v_eid IN employees.employee_id%TYPE, p_raise IN NUMBER)
+IS
+ p_eid_emp EXCEPTION;
+BEGIN
+    
+    update employees
+    set salary = salary *( 1 + (p_raise/100))
+    where employee_id = v_eid; 
+    
+    IF SQL%ROWCOUNT = 0 THEN
+        RAISE p_eid_emp;
+    END IF;
+    
+    EXCEPTION
+    WHEN p_eid_emp THEN
+        DBMS_OUTPUT.PUT_LINE('No search employee!!');
+END;
+/
+
+select * from employees where employee_id = 200;
+
+EXECUTE y_update(200, 10);
+
+
+/*
+5.
+다음과 같이 테이블을 생성하시오.
+create table yedam01
+(y_id number(10),
+ y_name varchar2(20));
+
+create table yedam02
+(y_id number(10),
+ y_name varchar2(20));
+5-1.
+부서번호를 입력하면 사원들 중에서 입사년도가 2005년 이전 입사한 사원은 yedam01 테이블에 입력하고,
+입사년도가 2005년(포함) 이후 입사한 사원은 yedam02 테이블에 입력하는 y_proc 프로시저를 생성하시오.
+-- 입력 : 부서번호
+-- 연산 : 해당사원 -> 앞서 만든 테이블에 insert
+            1) select => cursor
+            2) IF 문 , 입사년도,
+                2-1) 입사년도가 2005년 이전이면 yedam01 테이블에 insert
+                2-2) 입사년도가 >= 2005년 이면 yedam02 테이블에 insert
+
+
+5-2.
+1. 단, 부서번호가 없을 경우 "해당부서가 없습니다" 예외처리
+2. 단, 해당하는 부서에 사원이 없을 경우 "해당부서에 사원이 없습니다" 예외처리
+*/
+create table yedam01
+    (y_id number(10),
+    y_name varchar2(20));
+create table yedam02
+    (y_id number(10),
+    y_name varchar2(20));
+--5-1)
+CREATE OR REPLACE PROCEDURE y_proc
+(p_deptno IN departments.department_id%TYPE)
+IS
+    CURSOR emp_cursor IS
+    SELECT employee_id, last_name, hire_date
+    FROM employees
+    WHERE department_id = p_deptno;
+    
+    emp_rec emp_cursor%ROWTYPE;
+    v_deptno departments.department_id%TYPE;
+    
+    e_no_emp EXCEPTION;
+BEGIN
+-- 첫번째 예외처리를 위해 select 문 필요
+    SELECT department_id
+    INTO v_deptno
+    FROM departments
+    WHERE department_id = p_deptno;
+    
+    OPEN emp_cursor;
+    LOOP
+    FETCH emp_cursor INTO emp_rec;
+    EXIT WHEN emp_cursor%NOTFOUND;
+    
+    --IF hire_date < TO_DATE('05-01-01', 'yy-MM-dd') THEN
+    IF TO_CHAR(emp_rec.hire_date,'yyyy') < '2005' THEN
+        INSERT INTO yedam01
+        VALUES(emp_rec.employee_id, emp_rec.last_name);
+    ELSE
+        INSERT INTO yedam02
+        VALUES(emp_rec.employee_id, emp_rec.last_name);
+    END IF; 
+    
+    END LOOP;
+    
+    IF emp_cursor%ROWCOUNT = 0 THEN
+        RAISE e_no_emp;
+    END IF;
+    
+    CLOSE emp_cursor;
+    EXCEPTION 
+    when e_no_emp then
+        DBMS_OUTPUT.PUT_LINE('해당 부서에는 사원이 없습니다.');
+    when NO_DATA_FOUND then
+        DBMS_OUTPUT.PUT_LINE('해당 부서는 존재하지않습니다.');
+END;
+/
+
+EXECUTE y_proc(80);
+
+select * from yedam01;

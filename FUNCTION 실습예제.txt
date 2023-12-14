@@ -1,0 +1,64 @@
+/*
+
+1.
+사원번호를 입력하면 
+last_name + first_name 이 출력되는 
+y_yedam 함수를 생성하시오.
+
+실행) EXECUTE DBMS_OUTPUT.PUT_LINE(y_yedam(174))
+출력 예)  Abel Ellen
+
+SELECT employee_id, y_yedam(employee_id)
+FROM   employees;
+
+*/
+
+/*
+2.
+사원번호를 입력할 경우 다음 조건을 만족하는 결과가 출력되는 ydinc 함수를 생성하시오.
+- 급여가 5000 이하이면 20% 인상된 급여 출력
+- 급여가 10000 이하이면 15% 인상된 급여 출력
+- 급여가 20000 이하이면 10% 인상된 급여 출력
+- 급여가 20000 이상이면 급여 그대로 출력
+실행) SELECT last_name, salary, YDINC(employee_id)
+     FROM   employees;
+*/
+
+/*
+
+3.
+사원번호를 입력하면 해당 사원의 연봉이 출력되는 yd_func 함수를 생성하시오.
+->연봉계산 : (급여+(급여*인센티브퍼센트))*12
+실행) SELECT last_name, salary, YD_FUNC(employee_id)
+     FROM   employees;
+     
+*/
+
+/*
+4. 
+SELECT last_name, subname(last_name)
+FROM   employees;
+
+LAST_NAME     SUBNAME(LA
+------------ ------------
+King         K***
+Smith        S****
+...
+예제와 같이 출력되는 subname 함수를 작성하시오.
+*/
+
+/*
+5. 
+부서번호를 입력하면 해당 부서의 책임자 이름를 출력하는 y_dept 함수를 생성하시오.
+(단, JOIN을 사용)
+(단, 다음과 같은 경우 예외처리(exception)
+ 해당 부서가 없거나 부서의 책임자가 없는 경우 아래의 메세지를 출력
+    
+    해당 부서가 없는 경우 -> 해당 부서가 존재하지 않습니다.
+	부서의 책임자가 없는 경우 -> 해당 부서의 책임자가 존재하지 않습니다.	)
+
+실행) EXECUTE DBMS_OUTPUT.PUT_LINE(y_dept(110))
+출력) Higgins
+SELECT department_id, y_dept(department_id)
+FROM   departments;
+*/

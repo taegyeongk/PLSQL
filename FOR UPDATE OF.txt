@@ -1,0 +1,21 @@
+-- FOR UPDATE, WHERE CURRENT OF
+DECLARE
+    CURSOR sal_info_cursor IS
+        SELECT salary, commission_pct
+        FROM employees
+        WHERE department_id = 60
+        FOR UPDATE OF salary, commission_pct NOWAIT;
+BEGIN
+    FOR sal_info IN sal_info_cursor LOOP
+        IF sal_info.commission_pct IS NULL THEN
+            UPDATE employees
+            SET salary = sal_info.salary * 1.1
+            WHERE CURRENT OF sal_info_cursor;
+        ELSE
+            UPDATE employees
+            SET salary = sal_info.salary + sal_info.salary * sal_info.commission_pct
+            WHERE CURRENT OF sal_info_cursor;
+        END IF;
+    END LOOP;
+END;
+/

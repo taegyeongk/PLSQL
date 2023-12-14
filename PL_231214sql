@@ -1,0 +1,284 @@
+--FUNCTION (리턴이 반드시 들어간다.)
+CREATE FUNCTION plus
+(p_x IN NUMBER,
+p_y NUMBER)
+RETURN NUMBER -- 어떤 타입으로 매개변수를 돌려줄지만 정의하면 된다. 리턴의 타입 정의
+IS
+    v_result NUMBER;
+BEGIN
+    v_result := p_x + p_y;
+    RETURN v_result; -- 반드시 무언가는 돌려줘야한다.
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN '데이터가 존재하지 않습니다.'; -- 여기는 컴파일에서 오류안나는 이유 : 실행이 안되서..!
+        WHEN TOO_MANY_ROWS THEN
+            RETURN '데이터가 요구한것 보다 많습니다.';
+END;
+/
+
+-- FUNCTION 실행할 수 있는 방법 3가지
+
+--1) 블록 내부에서 실행
+-- 함수에서는 담아줄 변수가 필요함.
+DECLARE
+    v_sum NUMBER;
+BEGIN
+    v_sum := plus(10,20);
+    DBMS_OUTPUT.PUT_LINE(v_sum);
+END;
+/
+--2) EXECUTE 명령어로 처리 / 문제는 돌아오는것을 감을때 DBMS 로 해줘야한다.
+EXECUTE DBMS_OUTPUT.PUT_LINE(plus(10,20));
+
+--3) SQL문 / 함수이기 때문에 사용 가능함 /  DML 을 내부에서 사용하지 않고 하는법
+SELECT plus(10,20) FROM dual;
+
+
+-- 1 ~ n 까지 누적된 값을 반환하는 함수
+--function 은 무조건 하나만 반환해야함
+CREATE FUNCTION y_factorial
+(p_n NUMBER)
+RETURN NUMBER -- 이미 정의되어있는 이 데이터 타입을 무시하면 오류가 발생
+IS
+    
+    v_sum NUMBER := 0; -- 내부에서 초기값 설정
+BEGIN
+    FOR idx IN 1..p_n LOOP
+        v_sum := v_sum + idx;
+    END LOOP;
+    
+    RETURN v_sum;
+
+EXCEPTION  -- 예외에서는 숫자로 리턴해야한다.
+    WHEN NO_DATA_FOUND THEN
+        RETURN -1;
+        WHEN TOO_MANY_ROWS THEN
+            RETURN 0;
+END;
+/
+
+EXECUTE DBMS_OUTPUT.PUT_LINE(y_factorial(10));
+
+
+
+
+/*
+1. 사원 번호를 입력하면 last_name + first_name 이 출력되는 y_yedam 함수를 생성하시오
+실행) EXECUTE DBMS_OUTPUT.PUT_LINE(y_yedam(174));
+출력 예) Adel Ellen
+
+SELECT employee_id , y_yedam(employee_id)
+FROM employees;
+
+*/
+
+CREATE FUNCTION y_yedam
+(v_eid test_employee.employee_id%TYPE) -- 입력받는값
+RETURN VARCHAR2
+IS
+v_ename employees.last_name%TYPE; --변수 타입지정
+BEGIN
+    SELECT last_name || first_name
+    INTO v_ename -- 실제 값을 담은 변수 선언
+    FROM employees
+    WHERE employee_id = v_eid;
+    
+    RETURN v_ename;
+END;
+/
+
+EXECUTE DBMS_OUTPUT.PUT_LINE(y_yedam(174));
+
+SELECT employee_id || ',' || first_name || last_name full_name FROM employees;
+SELECT last_name || first_name full_name FROM employees;
+
+/*
+2.
+사원번호를 입력할 경우 다음 조건을 만족하는 결과가 출력되는 ydinc 함수를 생성하시오.
+- 급여가 5000 이하이면 20% 인상된 급여 출력
+- 급여가 10000 이하이면 15% 인상된 급여 출력
+- 급여가 20000 이하이면 10% 인상된 급여 출력
+- 급여가 20000 이상이면 급여 그대로 출력
+실행) SELECT last_name, salary, YDINC(employee_id)
+     FROM   employees;
+*/
+-- 함수생성
+CREATE FUNCTION ydinc
+(v_eid test_employee.employee_id%TYPE)
+    RETURN NUMBER
+IS
+    v_upsal test_employee.salary%TYPE;
+BEGIN
+    SELECT salary
+    INTO v_upsal
+    FROM test_employee
+    WHERE employee_id = v_eid;
+    
+    IF v_upsal <= 5000 THEN
+        v_upsal := v_upsal + v_upsal * .2;
+    ELSIF v_upsal <= 10000 THEN
+        v_upsal := v_upsal + v_upsal * .15;
+    ELSIF v_upsal <= 20000 THEN
+        v_upsal := v_upsal + v_upsal * .1;
+    END IF;
+    RETURN v_upsal;
+END;
+/
+drop function ydinc;
+
+--실행문
+EXECUTE DBMS_OUTPUT.PUT_LINE(ydinc(174));
+
+SELECT last_name, salary, YDINC(employee_id) from employees
+where employee_id = 174;
+
+/*
+
+3.
+사원번호를 입력하면 해당 사원의 연봉이 출력되는 yd_func 함수를 생성하시오.
+->연봉계산 : (급여+(급여*인센티브퍼센트))*12
+실행) SELECT last_name, salary, YD_FUNC(employee_id)
+     FROM   employees;
+     
+*/
+-- 함수생성문
+create function yd_func
+(v_eid test_employee.employee_id%TYPE)
+RETURN NUMBER
+IS
+    v_ename test_employee.last_name%TYPE;
+    v_sal test_employee.salary%TYPE;
+    v_annual v_sal%TYPE;
+BEGIN
+    SELECT last_name, salary, (salary + (salary * commission_pct))* 12 as annual
+    INTO v_ename, v_sal, v_annual
+    FROM test_employee
+    WHERE employee_id = v_eid;
+    
+    return v_annual;
+END;
+/
+
+DROP FUNCTION yd_func;
+--실제 실행문
+EXECUTE DBMS_OUTPUT.PUT_LINE(yd_func(174));
+
+SELECT last_name, salary, (salary + (salary * commission_pct))* 12 as annual
+FROM test_employee
+WHERE employee_id = 174;
+/*
+4. 
+SELECT last_name, subname(last_name)
+FROM   employees;
+
+LAST_NAME     SUBNAME(LA
+------------ ------------
+King         K***
+Smith        S****
+...
+예제와 같이 출력되는 subname 함수를 작성하시오.
+*/
+-- 함수생성문
+create function subname
+(last_name test_employee.last_name%TYPE)
+return varchar2
+IS
+BEGIN
+   RETURN rpad(substr(last_name, 1,1), length(last_name), '*');
+END;
+/
+
+DROP FUNCTION subname;
+
+-- 실행문
+SELECT last_name, subname(last_name)
+FROM   employees;
+
+/*
+5. 
+부서번호를 입력하면 해당 부서의 책임자 이름를 출력하는 y_dept 함수를 생성하시오.
+(단, JOIN을 사용)
+(단, 다음과 같은 경우 예외처리(exception)
+ 해당 부서가 없거나 부서의 책임자가 없는 경우 아래의 메세지를 출력
+    
+    해당 부서가 없는 경우 -> 해당 부서가 존재하지 않습니다.
+	부서의 책임자가 없는 경우 -> 해당 부서의 책임자가 존재하지 않습니다.	)
+--inner join 은 책임자가 없는 사람이 누락되기 때문에 사용하지 않는다.
+실행) EXECUTE DBMS_OUTPUT.PUT_LINE(y_dept(110))
+출력) Higgins
+SELECT department_id, y_dept(department_id)
+FROM   departments;
+*/
+
+--예외처리 한 정답 / 특정 컬럼에 NULL 이 있는 경우 
+CREATE FUNCTION y_dept
+(p_deptno IN departments.department_id%TYPE)
+RETURN VARCHAR2
+IS
+    v_ename employees.last_name%type;
+    e_no_manager EXCEPTION;
+
+BEGIN
+    SELECT last_name
+    INTO v_ename
+    FROM employees e right outer join departments d on (e.employee_id = d.manager_id)
+    where d.department_id = p_deptno;
+    
+    IF v_ename IS NULL THEN
+        RAISE e_no_manager;
+    END IF;
+    RETURN v_ename;    
+    EXCEPTION 
+        WHEN NO_DATA_FOUND THEN
+            RETURN '해당 부서가 존재하지않습니다.';
+        WHEN e_no_manager THEN
+             RETURN '해당 부서의 책임자가 존재하지않습니다.';
+END;
+/
+
+-- 실행문
+SELECT department_id, y_dept(department_id)
+FROM   departments;
+
+
+-- no data found 로 혼합형태 사원번호가 없거나 매니저 번호가 없는 경우 누락될 수 있음 / 부서자체가 없다
+SELECT last_name
+FROM employees e join departments d on (e.employee_id = d.manager_id);
+
+
+-- null 값까지 다 출력됨 / 부서 책임자가 없음.
+SELECT last_name
+FROM employees e right outer join departments d on (e.employee_id = d.manager_id);
+
+
+--예외 사항 제외
+
+CREATE FUNCTION y_dept
+(p_deptno IN departments.department_id%TYPE)
+RETURN VARCHAR2
+IS
+    v_ename employees.last_name%type;
+
+BEGIN
+    SELECT last_name
+    INTO v_ename
+    FROM employees e right outer join departments d on (e.employee_id = d.manager_id)
+    where d.department_id = p_deptno;
+
+RETURN v_ename;
+
+END;
+/
+
+-- 전 계정의 객체
+SELECT *
+FROM all_source;
+
+-- 현재 계정의 객체
+SELECT *
+FROM user_source;
+
+-- 특정 객체의 정보를 확인하고 싶은 경우
+SELECT name, text
+FROM user_source
+WHERE type IN ('PROCEDURE', 'FUNCTION', 'PACKAGE', 'PACKAGE BODY');
